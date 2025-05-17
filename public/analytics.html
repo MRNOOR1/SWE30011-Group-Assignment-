@@ -2,17 +2,68 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Analytics</title>
+  <title>SmartMonitor • Analytics</title>
   <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-  <nav>
-    <button onclick="location.href='/'">Dashboard</button>
-    <button onclick="location.href='/analytics'">Analytics</button>
-  </nav>
-  <main>
-    <h1>Analytics</h1>
-    <div class="widget">[Analytics Content]</div>
+  <aside class="sidebar">
+    <div class="logo">SmartMonitor</div>
+    <nav>
+      <a href="/">Dashboard</a>
+      <a href="/analytics" class="active">Analytics</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <header>
+      <h1>Analytics</h1>
+    </header>
+
+    <!-- Summary Cards -->
+    <section class="cards">
+      <div class="card">
+        <div class="title">Total Exits</div>
+        <div class="value" id="total-exits">—</div>
+      </div>
+      <div class="card">
+        <div class="title">Avg Break</div>
+        <div class="value" id="avg-break">— min</div>
+      </div>
+      <div class="card">
+        <div class="title">Posture OK %</div>
+        <div class="value" id="posture-ok">—%</div>
+      </div>
+      <div class="card">
+        <div class="title">Avg CO₂</div>
+        <div class="value" id="avg-co2">— ppm</div>
+      </div>
+    </section>
+
+    <!-- Historical Chart -->
+    <section class="analytics-chart">
+      <h2>Break Durations (Last 7 Days)</h2>
+      <canvas id="chart-breaks"></canvas>
+    </section>
   </main>
+
+  <script>
+    // Placeholder values
+    document.getElementById('total-exits').textContent = '8';
+    document.getElementById('avg-break').textContent = '30';
+    document.getElementById('posture-ok').textContent = '92';
+    document.getElementById('avg-co2').textContent = '620';
+
+    new Chart(
+      document.getElementById('chart-breaks').getContext('2d'),
+      { type:'line',
+        data:{
+          labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+          datasets:[{ data:[25,30,28,35,20,40,32], borderColor:'#4e5dff', backgroundColor:'rgba(78,93,255,0.2)' }]
+        },
+        options:{ plugins:{legend:{display:false}} }
+      }
+    );
+  </script>
 </body>
 </html>

@@ -2,17 +2,86 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Dashboard</title>
+  <title>SmartMonitor • Dashboard</title>
   <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-  <nav>
-    <button onclick="location.href='/'">Dashboard</button>
-    <button onclick="location.href='/analytics'">Analytics</button>
-  </nav>
-  <main>
-    <h1>Main Dashboard</h1>
-    <div class="widget">[Dashboard Content]</div>
+  <aside class="sidebar">
+    <div class="logo">SmartMonitor</div>
+    <nav>
+      <a href="/" class="active">Dashboard</a>
+      <a href="/analytics">Analytics</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <header>
+      <h1>Dashboard</h1>
+    </header>
+
+    <!-- Status Cards -->
+    <section class="cards">
+      <div class="card">
+        <div class="title">Desk Occupied</div>
+        <div class="value" id="desk-status">—</div>
+      </div>
+      <div class="card">
+        <div class="title">CO₂ Level</div>
+        <div class="value" id="co2-level">— ppm</div>
+      </div>
+      <div class="card">
+        <div class="title">Room Temp</div>
+        <div class="value" id="room-temp">— °C</div>
+      </div>
+      <div class="card">
+        <div class="title">Lights</div>
+        <div class="value" id="light-status">—</div>
+      </div>
+      <div class="card">
+        <div class="title">Outdoor Temp</div>
+        <div class="value" id="outdoor-temp">— °C</div>
+      </div>
+      <div class="card">
+        <div class="title">Outdoor AQI</div>
+        <div class="value" id="outdoor-aqi">—</div>
+      </div>
+    </section>
+
+    <!-- Charts -->
+    <section class="charts">
+      <div class="chart-card">
+        <h2>CO₂ Trend (1h)</h2>
+        <canvas id="chart-co2"></canvas>
+      </div>
+      <div class="chart-card">
+        <h2>Occupancy Timeline</h2>
+        <canvas id="chart-occ"></canvas>
+      </div>
+    </section>
   </main>
+
+  <script>
+    // Placeholder: replace with real fetches and Chart.js code
+    document.getElementById('desk-status').textContent = 'Yes';
+    document.getElementById('co2-level').textContent = '650 ppm';
+    document.getElementById('room-temp').textContent = '22.5 °C';
+    document.getElementById('light-status').textContent = 'On';
+    document.getElementById('outdoor-temp').textContent = '15 °C';
+    document.getElementById('outdoor-aqi').textContent = '42';
+
+    const makeChart = (id, type) => new Chart(
+      document.getElementById(id).getContext('2d'),
+      { type,
+        data: {
+          labels: ['50m','40m','30m','20m','10m','Now'],
+          datasets: [{ data:[600,620,630,625,640,650], borderColor:'#4e5dff', backgroundColor:'rgba(78,93,255,0.2)' }]
+        },
+        options: { plugins:{legend:{display:false}}, scales:{x:{display:false}} }
+      }
+    );
+    makeChart('chart-co2','line');
+    makeChart('chart-occ','bar');
+  </script>
 </body>
 </html>
