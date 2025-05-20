@@ -1,0 +1,104 @@
+// Pin assignments
+const int pirPin = 15;        // PIR OUT
+const int mq135Pin = 2;       // MQ-135 AOUT (Analog)
+const int buzzerPin = 16;     // Buzzer
+const int ledPin = 17;        // LED
+const int flexPin = 4;        // ZD10-100 flex sensor (Analog)
+
+// Seated alert timer
+unsigned long seatedStartTime = 0;
+bool isSeated = false;
+const unsigned long maxSeatedDuration = 45 * 60 * 1000UL; // 45 minutes
+
+// Flex sensor seated threshold
+const int flexThreshold = 1500; // Adjust this based on your sensor readings
+
+void setup() {
+  Serial.begin(9600);
+
+  pinMode(pirPin, INPUT);
+  pinMode(mq135Pin, INPUT);
+  pinMode(flexPin, INPUT);
+  pinMode(buzzerPin, OUTPUT);
+  pinMode(ledPin, OUTPUT);
+
+  digitalWrite(buzzerPin, LOW);
+  digitalWrite(ledPin, LOW);
+}
+
+// Alert function for air quality or sitting too long
+void alertUser(String message) {
+  digitalWrite(ledPin, HIGH);
+  for (int i = 0; i < 3; i++) {
+    digitalWrite(buzzerPin, HIGH);
+    delay(300);
+    digitalWrite(buzzerPin, LOW);
+    delay(300);
+  }
+  delay(2000); // Keep LED on briefly after buzzer
+  digitalWrite(ledPin, LOW);
+}
+
+void loop() {
+  // Web interface commands
+  if (Serial.available()) {
+    String command = Serial.readStringUntil('\n');
+    command.trim();
+
+    if (command == "led") {
+      digitalWrite(ledPin, HIGH);
+      delay(5000);
+      digitalWrite(ledPin, LOW);
+    } else if (command == "buzzer") {
+      for (int i = 0; i < 3; i++) {
+        digitalWrite(buzzerPin, HIGH);
+        delay(300);
+        digitalWrite(buzzerPin, LOW);
+        delay(300);
+      }
+    }
+  }
+
+  // Sensor readings
+  int motion = digitalRead(pirPin);          // 1 = motion detected
+  int airValue = analogRead(mq135Pin);       // CO2 level
+  int flexValue = analogRead(flexPin);       // Flex sensor value
+
+  // Improved seated detection: must detect motion + posture
+  if (motion == HIGH && flexValue > flexThreshold) {
+    if (!isSeated) {
+      isSeated = true;
+      seatedStartTime = millis();
+    }
+  } else {
+    isSeated = false;
+    seatedStartTime = 0;
+  }
+
+  // Air quality alert logic
+  if (airValue > 4000) {
+    alertUser("Bad air quality!");
+  } else if (airValue > 3000) {
+    digitalWrite(ledPin, HIGH);  // Warning only
+  } else {
+    digitalWrite(ledPin, LOW);
+  }
+
+  // Seated too long alert
+  if (isSeated && (millis() - seatedStartTime > maxSeatedDuration)) {
+    alertUser("Seated too long!");
+  }
+
+  // Serial output to edge server
+  Serial.print("CO2:");
+  Serial.print(airValue);
+  Serial.print(" SEATED:");
+  Serial.print(isSeated ? 1 : 0);
+  Serial.print(" (Motion=");
+  Serial.print(motion);
+  Serial.print(", Flex=");
+  Serial.print(flexValue);
+  Serial.println(")");
+
+  delay(1000);
+}
