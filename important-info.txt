@@ -1,0 +1,3 @@
+the mac address of the door rig: ESP32 MAC Address: 3C:84:27:C7:0C:04
+
+the mac address of the door edge device: MAC Address: 64:E8:33:73:D7:80
