@@ -15,14 +15,14 @@ struct EdgeMsg  { uint8_t type; bool seated; };  // type 0=req, 1=resp
 #pragma pack(pop)
 
 // —— Peer MAC addresses ——  
-uint8_t doorMac[]      = {0x3C,0x84,0x27,0xC7,0x0C,0x04};
-uint8_t postureMac[]   = {0xCC,0x7B,0x5C,0x27,0x1E,0x40};
+uint8_t doorMac[]    = {0x3C,0x84,0x27,0xC7,0x0C,0x04};
+uint8_t postureMac[] = {0xCC,0x7B,0x5C,0x27,0x1E,0x40};
 
 // —— State variables ——  
-bool        lastDoorOpen     = false;
-bool        waitingBreak     = false;
-bool        inBreak          = false;
-unsigned    long breakStart  = 0;
+bool        lastDoorOpen    = false;
+bool        waitingBreak    = false;
+bool        inBreak         = false;
+unsigned    long breakStart = 0;
 
 // —— Helpers for TFT ——  
 void showHeader(const char* t) {
@@ -77,43 +77,42 @@ void onDataSent(const uint8_t* mac, esp_now_send_status_t status) {
 // —— Incoming ESP-NOW handler ——  
 void onDataRecv(const esp_now_recv_info_t* info,
                 const uint8_t* data, int len) {
-  // Figure out who sent us what
+  // DoorMsg?
   if (len == sizeof(DoorMsg)) {
     DoorMsg m; memcpy(&m,data,len);
     bool open = m.doorOpen;
     Serial.printf("[RX] Door %s\n", open?"OPEN":"CLOSED");
     showDoor(open?"OPEN":"CLOSED");
 
-    // On door-open we ask posture
+    // On door-open → ask posture
     if (open) {
       waitingBreak = false;
-      DoorMsg dm; // reused struct
       EdgeMsg req = {0,false};
       esp_now_send(postureMac,(uint8_t*)&req,sizeof(req));
       Serial.println("[TX] Posture Request");
     }
-    // On door-close: if we had seen a “not seated” response,
-    // that means the person just stepped out → start break timer.
-    else if (inBreak == false && waitingBreak) {
+    // On door-close → if previously marked not-seated, start break
+    else if (!inBreak && waitingBreak) {
       waitingBreak = false;
-      inBreak     = true;
-      breakStart  = millis();
+      inBreak      = true;
+      breakStart   = millis();
       Serial.println("[BREAK] Started");
       showBreakStart();
     }
-
     lastDoorOpen = open;
   }
+
+  // EdgeMsg (type==1) for both posture responses and forwarded sensor updates
   else if (len == sizeof(EdgeMsg)) {
     EdgeMsg r; memcpy(&r,data,len);
-    Serial.printf("[RX] Posture Resp: %s\n", r.seated?"SEATED":"STANDING");
+    Serial.printf("[RX] Posture Resp: %s\n", r.seated?"SEATED":"STAND");
     showPosture(r.seated?"SEATED":"STAND");
 
-    // If they’re not seated, arm the break on next door-close
+    // Arm break on next door-close if standing
     if (r.type==1 && !r.seated) {
       waitingBreak = true;
     }
-    // If they come back seated *during* a break, end it immediately
+    // End break immediately if seated during break
     else if (r.type==1 && r.seated && inBreak) {
       inBreak = false;
       unsigned long secs = (millis() - breakStart)/1000;
@@ -121,11 +120,12 @@ void onDataRecv(const esp_now_recv_info_t* info,
       if (secs < 300)       cat = "Bathroom";
       else if (secs > 1800) cat = "Break";
       else                  cat = "Short Break";
-
       Serial.printf("[BREAK] Ended: %lus (%s)\n", secs, cat);
       showBreakDuration(secs, cat);
     }
   }
+
+  // Unknown format
   else {
     Serial.printf("[RX] Unknown %d bytes\n", len);
   }
