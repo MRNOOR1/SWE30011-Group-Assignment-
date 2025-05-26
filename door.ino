@@ -63,7 +63,7 @@ void loop() {
     digitalWrite(LED_PIN, LOW);
     digitalWrite(BUZZER_PIN, LOW);
 
-    // send new state
+    // send new statea
     payload.doorOpen = doorOpen;
     esp_err_t err = esp_now_send(edgeMac, (uint8_t*)&payload, sizeof(payload));
     Serial.printf("Door %s → sent doorOpen=%s (err=%d)\n",
